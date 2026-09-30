@@ -28,18 +28,15 @@ jobs:
       - run: make extract
 
       - run: make
-
       - name: Create FFV1 variant
         run: |
           cd configs
           node mkconfig.js ffv1-mkv '["encoder-ffv1", "format-matroska"]'
-
-      - name: Show FFV1 configuration
+      
+      - name: Show generated files
         run: |
-          cat configs/configs/ffv1-mkv/config.json
-          echo "-----"
-          cat configs/configs/ffv1-mkv/ffmpeg-config.txt
-
+          find configs -maxdepth 3 -type f | sort
+      
       - name: Build FFV1 variant
         run: |
           make build-ffv1-mkv
