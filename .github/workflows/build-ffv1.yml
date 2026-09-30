@@ -31,7 +31,7 @@ jobs:
       - name: Create FFV1 variant
         run: |
           cd configs
-          node mkconfig.js ffv1-mkv '["encoder-ffv1", "format-matroska"]'
+          node mkconfig.js ffv1-mkv '["avcodec", "avformat", "encoder-ffv1", "format-matroska"]'
       
       - name: Show generated files
         run: |
