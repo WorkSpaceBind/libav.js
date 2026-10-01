@@ -1,4 +1,4 @@
-name: Build All
+name: build-all-p1
 
 on:
   workflow_dispatch:
