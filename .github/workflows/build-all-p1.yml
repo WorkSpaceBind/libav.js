@@ -46,61 +46,8 @@ jobs:
           encoderList=(
             a64multi
             hevc_mf
-            pcm_s24daud
-            a64multi5
-            hevc_nvenc
-            pcm_s24le
-            aac
-            hevc_oh
-            pcm_s24le_planar
-            aac_at
-            hevc_qsv
-            pcm_s32be
-            aac_mf
-            hevc_rkmpp
-            pcm_s32le
-            ac3
-            hevc_v4l2m2m
-            pcm_s32le_planar
-            ac3_fixed
-            hevc_vaapi
-            pcm_s64be
-            ac3_mf
-            hevc_videotoolbox
-            pcm_s64le
-            adpcm_adx
-            hevc_vulkan
-            pcm_s8
-            adpcm_argo
-            huffyuv
-            pcm_s8_planar
-            adpcm_g722
-            ilbc_at
-            pcm_u16be
-            adpcm_g726
-            jpeg2000
-            pcm_u16le
-            adpcm_g726le
-            jpegls
-            pcm_u24be
-            adpcm_ima_alp
-            libaom_av1
-            pcm_u24le
-            adpcm_ima_amv
-            libcodec2
-            pcm_u32be
-            adpcm_ima_apm
-            libfdk_aac
-            pcm_u32le
-            adpcm_ima_qt
-            libgsm
-            pcm_u8
-            adpcm_ima_ssi
-            libgsm_ms
-            pcm_vidc
-            adpcm_ima_wav
           )
-          for encoder in "${arr[@]}"; do
+          for encoder in "${encoderList[@]}"; do
       
               echo
               echo "========================================"
