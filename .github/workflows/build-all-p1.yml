@@ -51,11 +51,11 @@ jobs:
       
               echo
               echo "========================================"
-              echo "Creating: ${encoder}-mkv"
+              echo "Creating: ${encoder}-myBuild"
               echo "========================================"
       
               node mkconfig.js \
-                "${encoder}-mkv" \
+                "${encoder}-myBuild" \
                 "[\"avcodec\", \"avformat\", \"encoder-${encoder}\", \"format-matroska\"]"
       
             done
@@ -73,7 +73,7 @@ jobs:
             -mindepth 1 \
             -maxdepth 1 \
             -type d \
-            -name '*-mkv' \
+            -name '*-myBuild' \
             -printf '%f\n' |
             sort
 
@@ -115,7 +115,7 @@ jobs:
               -mindepth 1 \
               -maxdepth 1 \
               -type d \
-              -name '*-mkv' \
+              -name '*-myBuild' \
               -printf '%f\n' |
               sort
           )
@@ -163,8 +163,8 @@ jobs:
       # ============================================================
       - uses: actions/upload-artifact@v4
         with:
-          name: libav-6.9.8.1-all-encoders-mkv
+          name: libav-6.9.8.1-all-encoders-myBuild
           path: |
-            dist/*-mkv*
+            dist/*-myBuild*
             build-results/
           if-no-files-found: warn
