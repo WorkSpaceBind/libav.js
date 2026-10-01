@@ -33,6 +33,28 @@ jobs:
         run: |
           find . -type f -name configure -print
 
+      - name: List FFmpeg components
+        run: |
+          set -e
+
+          FFMPEG_DIR="./build/ffmpeg-8.1"
+
+          echo "=== Encoders ==="
+          cd "$FFMPEG_DIR"
+          ./configure --list-encoders | sort
+
+          echo
+          echo "=== Decoders ==="
+          ./configure --list-decoders | sort
+
+          echo
+          echo "=== Muxers ==="
+          ./configure --list-muxers | sort
+
+          echo
+          echo "=== Demuxers ==="
+          ./configure --list-demuxers | sort
+
 
 
           
