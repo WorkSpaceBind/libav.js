@@ -65,14 +65,22 @@ jobs:
       - name: Show generated encoder variants
         shell: bash
         run: |
-          find configs \
-            -mindepth 1 \
-            -maxdepth 1 \
-            -type d \
-            -name '*-mkv' \
-            -printf '%f\n' |
-            sort
+          echo "=== configs ==="
+          ls -la configs
+      
+          echo
+          echo "=== encoder variants ==="
+          find configs -maxdepth 2 -iname '*-mkv*' -print | sort
+      
+          echo
+          echo "=== ffv1 ==="
+          find configs -iname 'ffv1*' -print
+      
+          echo
+          echo "=== ffvhuff ==="
+          find configs -iname 'ffvhuff*' -print
 
+          
       # ============================================================
       # 逐个构建
       # 某个失败不会停止后面的构建
