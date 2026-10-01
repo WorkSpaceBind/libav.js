@@ -27,14 +27,11 @@ jobs:
 
 
       - run: make extract
-      - name: Generate all configs
-        run: |
-          cd configs
-          node mkconfigs.js
-      - name: Show generated configs
-        run: |
-          find configs -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort
 
+      
+      - name: Find FFmpeg source
+        run: |
+          find . -type f -name configure -print
 
 
 
