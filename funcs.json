@@ -412,10 +412,7 @@
                 {"name": "pkt_timebase", "rational": true},
                 "qmax",
                 "qmin",
-                "width",
-                
-                "thread_count",
-                "thread_type"
+                "width"
             ]]
         ],
 
