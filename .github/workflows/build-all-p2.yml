@@ -1,0 +1,222 @@
+name: build-all-p2
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - uses: mymindstorm/setup-emsdk@v16
+        with:
+          version: 4.0.23
+          actions-cache-folder: 'cache-emsdk'
+
+      - uses: actions/cache@v3
+        name: Cache dependencies
+        with:
+          key: cache-dependencies-${{ hashFiles('mk/*') }}
+          path: build/*.tar*
+
+      - run: make extract
+
+      - run: make
+
+      # ============================================================
+      # 自动生成所有 encoder 的 MKV variant
+      # ============================================================
+      - name: Create all encoder variants
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          FFMPEG_DIR="$GITHUB_WORKSPACE/build/ffmpeg-8.1"
+
+          echo "FFmpeg source:"
+          echo "$FFMPEG_DIR"
+
+          cd configs
+          encoderList=(
+            libilbc
+            pcx
+            adpcm_ima_ws
+            libjxl
+            pfm
+            adpcm_ms
+            libjxl_anim
+            pgm
+            adpcm_swf
+            libkvazaar
+            pgmyuv
+            adpcm_yamaha
+            liblc3
+            phm
+            alac
+            libmp3lame
+            png
+            alac_at
+            liboapv
+            ppm
+            alias_pix
+            libopencore_amrnb
+            prores
+            amv
+            libopenh264
+            prores_aw
+            anull
+            libopenjpeg
+            prores_ks
+            apng
+            libopus
+            prores_ks_vulkan
+            aptx
+            librav1e
+            prores_videotoolbox
+            aptx_hd
+            libshine
+            qoi
+            ass
+            libspeex
+            qtrle
+            asv1
+            libsvtav1
+            r10k
+            asv2
+            libsvtjpegxs
+            r210
+            av1_amf
+            libtheora
+            ra_144
+            av1_d3d12va
+            libtwolame
+            rawvideo
+            av1_mediacodec
+            libvo_amrwbenc
+          )
+          for encoder in "${encoderList[@]}"; do
+
+              echo
+              echo "========================================"
+              echo "Creating: ${encoder}-myBuild"
+              echo "========================================"
+
+              node mkconfig.js \
+                "${encoder}-myBuild" \
+                "[\"avcodec\", \"avformat\", \"encoder-${encoder}\", \"format-matroska\"]"
+
+            done
+
+      # ============================================================
+      # 查看生成了哪些 variant
+      # ============================================================
+
+      - name: Show generated encoder variants
+        shell: bash
+        run: |
+          echo "=== encoder variants ==="
+
+          find configs/configs \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -type d \
+            -name '*-myBuild' \
+            -printf '%f\n' |
+            sort
+
+      # ============================================================
+      # 逐个构建
+      # 某个失败不会停止后面的构建
+      # ============================================================
+      - name: Build all encoder variants
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          mkdir -p build-results
+
+          : > build-results/success.txt
+          : > build-results/failed.txt
+
+          success_count=0
+          failed_count=0
+
+          while read -r name; do
+            echo
+            echo "========================================"
+            echo "Building: $name"
+            echo "========================================"
+
+            if make "build-$name"; then
+              echo "$name" >> build-results/success.txt
+              success_count=$((success_count + 1))
+              echo "SUCCESS: $name"
+            else
+              echo "$name" >> build-results/failed.txt
+              failed_count=$((failed_count + 1))
+              echo "FAILED: $name"
+            fi
+
+          done < <(
+            find configs/configs \
+              -mindepth 1 \
+              -maxdepth 1 \
+              -type d \
+              -name '*-myBuild' \
+              -printf '%f\n' |
+              sort
+          )
+
+          echo
+          echo "========================================"
+          echo "BUILD SUMMARY"
+          echo "========================================"
+
+          echo
+          echo "Successful:"
+          cat build-results/success.txt
+
+          echo
+          echo "Failed:"
+          cat build-results/failed.txt
+
+          echo
+          echo "Success count: $success_count"
+          echo "Failed count:  $failed_count"
+      # ============================================================
+      # 查看最终 dist
+      # ============================================================
+      - name: Show output
+        shell: bash
+        run: |
+          echo "=== dist ==="
+          find dist -maxdepth 1 -type f -printf '%f\n' | sort || true
+
+          echo
+          echo "=== build results ==="
+
+          if [ -f build-results/success.txt ]; then
+            echo "--- SUCCESS ---"
+            cat build-results/success.txt
+          fi
+
+          if [ -f build-results/failed.txt ]; then
+            echo "--- FAILED ---"
+            cat build-results/failed.txt
+          fi
+
+      # ============================================================
+      # 上传所有成功构建的文件
+      # ============================================================
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libav-6.9.8.1-all-encoders-myBuild
+          path: |
+            dist/*-myBuild*
+          if-no-files-found: warn
