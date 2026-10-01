@@ -219,4 +219,5 @@ jobs:
           name: libav-6.9.8.1-all-encoders-myBuild
           path: |
             dist/*-myBuild*
+            build-results/
           if-no-files-found: warn
