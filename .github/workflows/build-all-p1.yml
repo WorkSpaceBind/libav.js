@@ -1,0 +1,223 @@
+name: Build All
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - uses: mymindstorm/setup-emsdk@v16
+        with:
+          version: 4.0.23
+          actions-cache-folder: 'cache-emsdk'
+
+      - uses: actions/cache@v3
+        name: Cache dependencies
+        with:
+          key: cache-dependencies-${{ hashFiles('mk/*') }}
+          path: build/*.tar*
+
+      - run: make extract
+
+      - run: make
+
+      # ============================================================
+      # 自动生成所有 encoder 的 MKV variant
+      # ============================================================
+      - name: Create all encoder variants
+        shell: bash
+        run: |
+          set -euo pipefail
+      
+          FFMPEG_DIR="$GITHUB_WORKSPACE/build/ffmpeg-8.1"
+      
+          echo "FFmpeg source:"
+          echo "$FFMPEG_DIR"
+      
+          cd configs
+          encoderList=(
+            a64multi
+            hevc_mf
+            pcm_s24daud
+            a64multi5
+            hevc_nvenc
+            pcm_s24le
+            aac
+            hevc_oh
+            pcm_s24le_planar
+            aac_at
+            hevc_qsv
+            pcm_s32be
+            aac_mf
+            hevc_rkmpp
+            pcm_s32le
+            ac3
+            hevc_v4l2m2m
+            pcm_s32le_planar
+            ac3_fixed
+            hevc_vaapi
+            pcm_s64be
+            ac3_mf
+            hevc_videotoolbox
+            pcm_s64le
+            adpcm_adx
+            hevc_vulkan
+            pcm_s8
+            adpcm_argo
+            huffyuv
+            pcm_s8_planar
+            adpcm_g722
+            ilbc_at
+            pcm_u16be
+            adpcm_g726
+            jpeg2000
+            pcm_u16le
+            adpcm_g726le
+            jpegls
+            pcm_u24be
+            adpcm_ima_alp
+            libaom_av1
+            pcm_u24le
+            adpcm_ima_amv
+            libcodec2
+            pcm_u32be
+            adpcm_ima_apm
+            libfdk_aac
+            pcm_u32le
+            adpcm_ima_qt
+            libgsm
+            pcm_u8
+            adpcm_ima_ssi
+            libgsm_ms
+            pcm_vidc
+            adpcm_ima_wav
+          )
+          for encoder in "${arr[@]}"; do
+      
+              echo
+              echo "========================================"
+              echo "Creating: ${encoder}-mkv"
+              echo "========================================"
+      
+              node mkconfig.js \
+                "${encoder}-mkv" \
+                "[\"avcodec\", \"avformat\", \"encoder-${encoder}\", \"format-matroska\"]"
+      
+            done
+
+      # ============================================================
+      # 查看生成了哪些 variant
+      # ============================================================
+
+      - name: Show generated encoder variants
+        shell: bash
+        run: |
+          echo "=== encoder variants ==="
+  
+          find configs/configs \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -type d \
+            -name '*-mkv' \
+            -printf '%f\n' |
+            sort
+
+      # ============================================================
+      # 逐个构建
+      # 某个失败不会停止后面的构建
+      # ============================================================
+      - name: Build all encoder variants
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          mkdir -p build-results
+
+          : > build-results/success.txt
+          : > build-results/failed.txt
+
+          success_count=0
+          failed_count=0
+
+          while read -r name; do
+            echo
+            echo "========================================"
+            echo "Building: $name"
+            echo "========================================"
+
+            if make "build-$name"; then
+              echo "$name" >> build-results/success.txt
+              success_count=$((success_count + 1))
+              echo "SUCCESS: $name"
+            else
+              echo "$name" >> build-results/failed.txt
+              failed_count=$((failed_count + 1))
+              echo "FAILED: $name"
+            fi
+
+          done < <(
+            find configs/configs \
+              -mindepth 1 \
+              -maxdepth 1 \
+              -type d \
+              -name '*-mkv' \
+              -printf '%f\n' |
+              sort
+          )
+
+          echo
+          echo "========================================"
+          echo "BUILD SUMMARY"
+          echo "========================================"
+
+          echo
+          echo "Successful:"
+          cat build-results/success.txt
+
+          echo
+          echo "Failed:"
+          cat build-results/failed.txt
+
+          echo
+          echo "Success count: $success_count"
+          echo "Failed count:  $failed_count"
+      # ============================================================
+      # 查看最终 dist
+      # ============================================================
+      - name: Show output
+        shell: bash
+        run: |
+          echo "=== dist ==="
+          find dist -maxdepth 1 -type f -printf '%f\n' | sort || true
+
+          echo
+          echo "=== build results ==="
+
+          if [ -f build-results/success.txt ]; then
+            echo "--- SUCCESS ---"
+            cat build-results/success.txt
+          fi
+
+          if [ -f build-results/failed.txt ]; then
+            echo "--- FAILED ---"
+            cat build-results/failed.txt
+          fi
+
+      # ============================================================
+      # 上传所有成功构建的文件
+      # ============================================================
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libav-6.9.8.1-all-encoders-mkv
+          path: |
+            dist/*-mkv*
+            build-results/
+          if-no-files-found: warn
