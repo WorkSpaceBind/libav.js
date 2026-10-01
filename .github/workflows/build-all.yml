@@ -37,7 +37,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          FFMPEG_DIR="$GITHUB_WORKSPACE/build/ffmpeg-8.1"
+          FFMPEG_DIR="./build/ffmpeg-8.1"
 
           echo "FFmpeg source:"
           echo "$FFMPEG_DIR"
