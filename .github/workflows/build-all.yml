@@ -36,25 +36,28 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          FFMPEG_DIR="./build/ffmpeg-8.1"
-
+      
+          FFMPEG_DIR="$GITHUB_WORKSPACE/build/ffmpeg-8.1"
+      
           echo "FFmpeg source:"
           echo "$FFMPEG_DIR"
-
+      
           cd configs
-
+      
           "$FFMPEG_DIR/configure" --list-encoders |
-          while read -r encoder; do
-            echo
-            echo "========================================"
-            echo "Creating: ${encoder}-mkv"
-            echo "========================================"
-
-            node mkconfig.js \
-              "${encoder}-mkv" \
-              "[\"avcodec\", \"avformat\", \"encoder-${encoder}\", \"format-matroska\"]"
-          done
+            awk 'NF { for (i = 1; i <= NF; i++) print $i }' |
+            while read -r encoder; do
+      
+              echo
+              echo "========================================"
+              echo "Creating: ${encoder}-mkv"
+              echo "========================================"
+      
+              node mkconfig.js \
+                "${encoder}-mkv" \
+                "[\"avcodec\", \"avformat\", \"encoder-${encoder}\", \"format-matroska\"]"
+      
+            done
 
       # ============================================================
       # 查看生成了哪些 variant
