@@ -1,4 +1,4 @@
-name: Build FFV1
+name: Build All
 
 on:
   workflow_dispatch:
