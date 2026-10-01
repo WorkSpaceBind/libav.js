@@ -1,0 +1,169 @@
+name: Build FFV1
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - uses: mymindstorm/setup-emsdk@v16
+        with:
+          version: 4.0.23
+          actions-cache-folder: 'cache-emsdk'
+
+      - uses: actions/cache@v3
+        name: Cache dependencies
+        with:
+          key: cache-dependencies-${{ hashFiles('mk/*') }}
+          path: build/*.tar*
+
+      - run: make extract
+
+      - run: make
+
+      # ============================================================
+      # 自动生成所有 encoder 的 MKV variant
+      # ============================================================
+      - name: Create all encoder variants
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          FFMPEG_DIR="$GITHUB_WORKSPACE/build/ffmpeg-8.1"
+
+          echo "FFmpeg source:"
+          echo "$FFMPEG_DIR"
+
+          cd configs
+
+          "$FFMPEG_DIR/configure" --list-encoders |
+          while read -r encoder; do
+            echo
+            echo "========================================"
+            echo "Creating: ${encoder}-mkv"
+            echo "========================================"
+
+            node mkconfig.js \
+              "${encoder}-mkv" \
+              "[\"avcodec\", \"avformat\", \"encoder-${encoder}\", \"format-matroska\"]"
+          done
+
+      # ============================================================
+      # 查看生成了哪些 variant
+      # ============================================================
+      - name: Show generated encoder variants
+        shell: bash
+        run: |
+          find configs \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -type d \
+            -name '*-mkv' \
+            -printf '%f\n' |
+            sort
+
+      # ============================================================
+      # 逐个构建
+      # 某个失败不会停止后面的构建
+      # ============================================================
+      - name: Build all encoder variants
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          mkdir -p build-results
+
+          success_count=0
+          failed_count=0
+
+          while read -r name; do
+            echo
+            echo "========================================"
+            echo "Building: $name"
+            echo "========================================"
+
+            if make "build-$name"; then
+              echo "$name" >> build-results/success.txt
+              success_count=$((success_count + 1))
+              echo "SUCCESS: $name"
+            else
+              echo "$name" >> build-results/failed.txt
+              failed_count=$((failed_count + 1))
+              echo "FAILED: $name"
+            fi
+
+          done < <(
+            find configs \
+              -mindepth 1 \
+              -maxdepth 1 \
+              -type d \
+              -name '*-mkv' \
+              -printf '%f\n' |
+              sort
+          )
+
+          echo
+          echo "========================================"
+          echo "BUILD SUMMARY"
+          echo "========================================"
+
+          echo
+          echo "Successful:"
+          if [ -f build-results/success.txt ]; then
+            cat build-results/success.txt
+          else
+            echo "(none)"
+          fi
+
+          echo
+          echo "Failed:"
+          if [ -f build-results/failed.txt ]; then
+            cat build-results/failed.txt
+          else
+            echo "(none)"
+          fi
+
+          echo
+          echo "Success count: $success_count"
+          echo "Failed count:  $failed_count"
+
+      # ============================================================
+      # 查看最终 dist
+      # ============================================================
+      - name: Show output
+        shell: bash
+        run: |
+          echo "=== dist ==="
+          find dist -maxdepth 1 -type f -printf '%f\n' | sort || true
+
+          echo
+          echo "=== build results ==="
+
+          if [ -f build-results/success.txt ]; then
+            echo "--- SUCCESS ---"
+            cat build-results/success.txt
+          fi
+
+          if [ -f build-results/failed.txt ]; then
+            echo "--- FAILED ---"
+            cat build-results/failed.txt
+          fi
+
+      # ============================================================
+      # 上传所有成功构建的文件
+      # ============================================================
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libav-6.9.8.1-all-encoders-mkv
+          path: |
+            dist/*-mkv*
+            build-results/
+          if-no-files-found: warn
