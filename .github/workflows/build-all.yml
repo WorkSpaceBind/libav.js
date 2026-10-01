@@ -62,25 +62,20 @@ jobs:
       # ============================================================
       # 查看生成了哪些 variant
       # ============================================================
+
       - name: Show generated encoder variants
         shell: bash
         run: |
-          echo "=== configs ==="
-          ls -la configs
-      
-          echo
           echo "=== encoder variants ==="
-          find configs -maxdepth 2 -iname '*-mkv*' -print | sort
-      
-          echo
-          echo "=== ffv1 ==="
-          find configs -iname 'ffv1*' -print
-      
-          echo
-          echo "=== ffvhuff ==="
-          find configs -iname 'ffvhuff*' -print
+  
+          find configs/configs \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -type d \
+            -name '*-mkv' \
+            -printf '%f\n' |
+            sort
 
-          
       # ============================================================
       # 逐个构建
       # 某个失败不会停止后面的构建
@@ -91,6 +86,9 @@ jobs:
           set -uo pipefail
 
           mkdir -p build-results
+
+          : > build-results/success.txt
+          : > build-results/failed.txt
 
           success_count=0
           failed_count=0
@@ -112,7 +110,7 @@ jobs:
             fi
 
           done < <(
-            find configs \
+            find configs/configs \
               -mindepth 1 \
               -maxdepth 1 \
               -type d \
@@ -128,24 +126,15 @@ jobs:
 
           echo
           echo "Successful:"
-          if [ -f build-results/success.txt ]; then
-            cat build-results/success.txt
-          else
-            echo "(none)"
-          fi
+          cat build-results/success.txt
 
           echo
           echo "Failed:"
-          if [ -f build-results/failed.txt ]; then
-            cat build-results/failed.txt
-          else
-            echo "(none)"
-          fi
+          cat build-results/failed.txt
 
           echo
           echo "Success count: $success_count"
           echo "Failed count:  $failed_count"
-
       # ============================================================
       # 查看最终 dist
       # ============================================================
