@@ -25,10 +25,20 @@ jobs:
           key: cache-dependencies-${{ hashFiles('mk/*') }}
           path: build/*.tar*
 
+
       - run: make extract
-      - name: List config fragments
+      - name: Generate all configs
         run: |
-          find configs/fragments -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort
+          cd configs
+          node mkconfigs.js
+      - name: Show generated configs
+        run: |
+          find configs -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort
+
+
+
+
+          
       - run: make
       - name: Create FFV1 variant
         run: |
