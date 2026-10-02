@@ -38,7 +38,7 @@ jobs:
       
       - name: Build variant
         run: |
-          make build-decoder-h264
+          make build-h264-aac
 
       - name: Show output
         run: |
