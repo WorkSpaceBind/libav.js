@@ -94,6 +94,11 @@ B(int, strict_std_compliance)
 B(int, qmax)
 B(int, qmin)
 B(int, width)
+
+
+BL(int, thread_count)
+BL(int, thread_type)
+
 #undef B
 #undef BL
 
