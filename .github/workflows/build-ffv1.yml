@@ -28,7 +28,7 @@ jobs:
 
       - run: make extract
 
-      
+
       - name: Find FFmpeg source
         run: |
           find . -type f -name configure -print
@@ -57,27 +57,27 @@ jobs:
 
 
 
-          
+
       - run: make
       - name: Create FFV1 variant
         run: |
           cd configs
-          node mkconfig.js ffv1-mkv '["avcodec", "avformat", "encoder-ffv1", "format-matroska"]'
-      
+          node mkconfig.js ffv1-myBuild '["avcodec", "avformat", "encoder-ffv1", "format-matroska"]'
+
       - name: Show generated files
         run: |
           find configs -maxdepth 3 -type f | sort
-      
+
       - name: Build FFV1 variant
         run: |
-          make build-ffv1-mkv
+          make build-ffv1-myBuild
 
       - name: Show output
         run: |
-          ls -lh dist/*ffv1-mkv*
+          ls -lh dist/*ffv1-myBuild*
 
       - uses: actions/upload-artifact@v4
         with:
-          name: libav-6.9.8.1-ffv1-mkv
+          name: libav-6.9.8.1-ffv1-myBuild
           path: |
-            dist/*ffv1-mkv*
+            dist/*ffv1-myBuild*
