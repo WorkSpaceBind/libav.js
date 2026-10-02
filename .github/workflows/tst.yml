@@ -25,7 +25,23 @@ jobs:
           path: build/*.tar*
 
       - run: make extract
-
+      - name: Check FFmpeg libx264 support
+        shell: bash
+        run: |
+          cd build/ffmpeg-8.1
+      
+          echo "=== configure --help ==="
+          ./configure --help | grep -E 'libx264|enable-gpl' || true
+      
+          echo
+          echo "=== encoder list ==="
+          ./configure --list-encoders | grep -i x264 || true
+      
+          echo
+          echo "=== libraries ==="
+          find "$GITHUB_WORKSPACE/build" \
+            -iname '*x264*' \
+            -print
       - run: make
 
       # ============================================================
@@ -79,9 +95,6 @@ jobs:
             find configs/configs/libx264-myBuild -type f | sort
 
             echo "verify2"
-            cat configs/configs/libx264-myBuild/ffmpeg-config.txt
-
-            echo "verify3"
             cat configs/configs/libx264-myBuild/ffmpeg-config.txt
 
       # ============================================================
