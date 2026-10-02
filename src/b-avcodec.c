@@ -57,8 +57,8 @@ B(int, width)
 
 
 
-B(int, thread_count)
-B(int, thread_type)
+// B(int, thread_count)
+// B(int, thread_type)
 
 
 
