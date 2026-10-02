@@ -25,30 +25,26 @@ jobs:
           path: build/*.tar*
 
       - run: make extract
-      - name: Build x264
+      - name: Debug OpenH264 configuration
         shell: bash
         run: |
-          set -euo pipefail
-      
-          cd build
-      
-          git clone --depth 1 https://code.videolan.org/videolan/x264.git x264
-      
-          cd x264
-      
-          emconfigure ./configure \
-            --host=x86_64-unknown-linux \
-            --disable-cli \
-            --enable-static \
-            --disable-opencl \
-            --prefix="$GITHUB_WORKSPACE/build/x264-install"
-      
-          emmake make -j"$(nproc)"
-          emmake make install
-      
+          set -x
+
+          echo "=== project references ==="
+          grep -Rni "enable-libopenh264" configs mk . || true
+
           echo
-          echo "=== x264 output ==="
-          find "$GITHUB_WORKSPACE/build/x264-install" -type f | sort
+          echo "=== generated config references ==="
+          find configs/configs -type f -exec grep -Hn "libopenh264" {} \; || true
+
+          echo
+          echo "=== FFmpeg configure support ==="
+          cd build/ffmpeg-8.1
+          ./configure --help | grep -i openh264 || true
+
+          echo
+          echo "=== OpenH264 files ==="
+          find "$GITHUB_WORKSPACE/build" -iname '*openh264*' -print || true
       - run: make
 
       # ============================================================
@@ -66,7 +62,7 @@ jobs:
 
           cd configs
           encoderList=(
-            libx264
+            libopenh264
           )
           for encoder in "${encoderList[@]}"; do
 
