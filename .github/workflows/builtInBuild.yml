@@ -1,0 +1,51 @@
+name: builtInBuild
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - uses: mymindstorm/setup-emsdk@v16
+        with:
+          version: 4.0.23
+          actions-cache-folder: 'cache-emsdk'
+
+      - uses: actions/cache@v3
+        name: Cache dependencies
+        with:
+          key: cache-dependencies-${{ hashFiles('mk/*') }}
+          path: build/*.tar*
+
+
+      - run: make extract
+
+      
+
+          
+      - run: make
+      - name: Show generated files
+        run: |
+          find configs -maxdepth 3 -type f | sort
+      
+      - name: Build variant
+        run: |
+          make build-decoder-h264
+
+      - name: Show output
+        run: |
+          ls -lh dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libav-6.9.8.1-builtInBuild
+          path: |
+            dist/*
