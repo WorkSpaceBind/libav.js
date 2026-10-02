@@ -1,4 +1,4 @@
-name: tst
+name: libx264
 on:
   workflow_dispatch:
 
