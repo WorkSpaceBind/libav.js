@@ -73,7 +73,7 @@ jobs:
 
               node mkconfig.js \
                 "${encoder}-myBuild" \
-                "[\"avcodec\", \"avformat\", \"encoder-${encoder}\", \"format-matroska\"]"
+                "[\"avcodec\", \"avformat\", \"codec-${encoder}\", \"format-matroska\"]"
 
             done
 
