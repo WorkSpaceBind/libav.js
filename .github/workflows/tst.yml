@@ -25,18 +25,48 @@ jobs:
           path: build/*.tar*
 
       - run: make extract
+      - name: Check external encoder dependencies
+        shell: bash
+        run: |
+          echo "=== build directories ==="
+          find build -maxdepth 2 -type d | sort
+
+          echo
+          echo "=== possible external codec libraries ==="
+          find build \
+            \( -iname '*x264*' \
+            -o -iname '*x265*' \
+            -o -iname '*vpx*' \
+            -o -iname '*opus*' \
+            -o -iname '*lame*' \
+            -o -iname '*svt*' \) \
+            -print | sort
+
+      - name: Inspect dependency definitions
+        shell: bash
+        run: |
+          echo "=== mk files ==="
+          find mk -maxdepth 2 -type f -print | sort
+      
+          echo
+          echo "=== x264 references ==="
+          grep -RniE 'x264|libx264' mk Makefile . \
+            --exclude-dir=.git \
+            --exclude-dir=build \
+            --exclude-dir=cache-emsdk || true
+
       - name: Check FFmpeg libx264 support
         shell: bash
         run: |
           cd build/ffmpeg-8.1
-      
+
           echo "=== configure --help ==="
           ./configure --help | grep -E 'libx264|enable-gpl' || true
-      
+
           echo
           echo "=== encoder list ==="
           ./configure --list-encoders | grep -i x264 || true
-      
+
           echo
           echo "=== libraries ==="
           find "$GITHUB_WORKSPACE/build" \
